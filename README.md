@@ -73,3 +73,10 @@ angepasst werden.
 7. Schräge Sit-ups: 2 Arbeitssätze (10–15 je Seite)
 
 Seitheben und schräge Sit-ups können als Supersatz ausgeführt werden.
+
+
+## Finales UI-Update
+
+- Notizfelder aus dem Training entfernt.
+- Chat-Export enthält nur Trainingswerte und Progressionshinweise.
+- Cache-Strategie aktualisiert, damit neue App-Versionen zuverlässig geladen werden.

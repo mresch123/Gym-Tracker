@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Freitag Gym">
 
 <title>Freitag Gym</title>
-<meta name="app-build" content="FINAL-18 · 17.09.2026 17:05">
+<meta name="app-build" content="FINAL-18-NONOTES-CACHEFIX · 17.09.2026 17:13">
 <style>
   :root{
     --bg:#f7f7f5;
@@ -188,12 +188,12 @@
     font-size:20px;
     outline:none;
   }
-  .num:focus,.note:focus{
+  .num:focus,.export-box:focus{
     border-color:#999;
     box-shadow:0 0 0 2px rgba(0,0,0,.06);
   }
   .num::placeholder{color:#aaa}
-  .note{
+  .export-box{
     width:100%;
     border:1px solid var(--line);
     background:#fff;
@@ -411,7 +411,7 @@
 <main class="app">
   <div class="top">
     <div>
-      <div class="eyebrow">Freitag · Ganzkörpertraining</div>
+      <div class="eyebrow">Freitag · Ganzkörpertraining · FINAL 18</div>
       <h1>Gym-Tracker</h1>
     </div>
     <div class="datebox">
@@ -466,7 +466,7 @@
   <div class="sheet">
     <h2 id="exportTitle">Chat-Export</h2>
     <p>Den Text kannst du direkt hier in den Chat einfügen. Enthalten sind die Arbeitssätze und die aktuelle Progressionsbewertung.</p>
-    <textarea id="exportText" class="note" rows="12" readonly style="min-height:260px;margin-bottom:12px"></textarea>
+    <textarea id="exportText" class="export-box" rows="12" readonly style="min-height:260px;margin-bottom:12px"></textarea>
     <div class="sheet-actions">
       <button class="btn secondary" id="closeExport" type="button">Schließen</button>
       <button class="btn primary" id="copyExport" type="button">Text kopieren</button>
@@ -710,7 +710,7 @@
         s.profileConfigured = true; // preserve existing users on update
       }
       if(!s.draft || typeof s.draft !== "object") s.draft = {};
-      if(!s.notes || typeof s.notes !== "object") s.notes = {};
+      s.notes = {};
       s.plan = normalizePlanToFinalFriday(s.plan);
       return s;
     }catch(e){
@@ -837,17 +837,6 @@
         card.appendChild(row);
       });
 
-      const note=document.createElement("textarea");
-      note.className="note";
-      note.rows=1;
-      note.placeholder="Notiz (optional), z. B. RIR, Technik, Maschine …";
-      note.value=state.notes[ex.id] ?? "";
-      note.addEventListener("input",()=>{
-        state.notes[ex.id]=note.value.slice(0,300);
-        saveState();
-      });
-      card.appendChild(note);
-
       const suggestion=document.createElement("div");
       suggestion.className="suggestion";
       suggestion.dataset.suggestion=ex.id;
@@ -924,7 +913,6 @@
         name:ex.name,
         unit:ex.unit,
         sets:getWorkData(ex),
-        note:state.notes[ex.id] ?? "",
         progression:progressionFor(ex)
       }))
     };
@@ -976,8 +964,6 @@
         lines.push(`→ ${prog.text}`);
       }
 
-      const note = (state.notes[ex.id] || "").trim();
-      if(note) lines.push(`Notiz: ${note}`);
     });
 
     if(lines.length===1){
@@ -1108,7 +1094,7 @@
       const top=document.createElement("div"); top.className="history-top";
       const left=document.createElement("div");
       const d=document.createElement("div"); d.className="history-date"; d.textContent=formatDate(session.date);
-      const m=document.createElement("div"); m.className="history-meta"; m.textContent="Freitag · Ganzkörpertraining";
+      const m=document.createElement("div"); m.className="history-meta"; m.textContent="Freitag · Ganzkörpertraining · FINAL 18";
       left.append(d,m);
       const del=document.createElement("button"); del.type="button"; del.className="btn danger"; del.style.minHeight="38px"; del.style.padding="6px 10px"; del.style.fontSize="13px"; del.textContent="Löschen";
       del.addEventListener("click",()=>{
@@ -1215,6 +1201,7 @@
       state = payload.appState;
       if(typeof state.profileName !== "string") state.profileName = "";
       if(typeof state.profileConfigured !== "boolean") state.profileConfigured = true;
+      state.notes = {};
       state.plan = normalizePlanToFinalFriday(state.plan);
       saveState();
       renderWorkout();
@@ -1292,8 +1279,18 @@
   });
 
   if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (refreshing) return;
+      refreshing = true;
+      window.location.reload();
+    });
+
+    window.addEventListener("load", async () => {
+      try {
+        const registration = await navigator.serviceWorker.register("./sw.js", {updateViaCache:"none"});
+        await registration.update();
+      } catch (e) {}
     });
   }
 
