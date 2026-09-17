@@ -1,0 +1,30 @@
+{
+  "name": "Freitag Gym Tracker",
+  "short_name": "Freitag Gym",
+  "description": "Persönlicher Freitag-Gym-Tracker mit Progression, Verlauf und Chat-Export.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f7f5",
+  "theme_color": "#f7f7f5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": [
+    "fitness",
+    "health",
+    "productivity"
+  ]
+}
