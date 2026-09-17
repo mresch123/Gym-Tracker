@@ -1,4 +1,4 @@
-const CACHE_NAME = "freitag-gym-v2";
+const CACHE_NAME = "freitag-gym-v3";
 const APP_ASSETS = [
   "./",
   "./index.html",

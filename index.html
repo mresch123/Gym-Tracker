@@ -302,6 +302,49 @@
     line-height:1.4;
     margin:-6px 2px 14px;
   }
+
+  .backup-btn.wide{grid-column:1 / -1}
+  .profile-chip{
+    display:inline-block;
+    margin-top:6px;
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.35;
+  }
+  .setup-grid{
+    display:grid;
+    grid-template-columns:1fr 120px;
+    gap:10px 12px;
+    margin:14px 0 10px;
+    align-items:end;
+  }
+  .setup-grid .label{
+    color:var(--muted);
+    font-size:13px;
+    margin-bottom:5px;
+  }
+  .setup-row{
+    display:contents;
+  }
+  .setup-name{
+    margin:12px 0 2px;
+  }
+  .setup-name input{
+    width:100%;
+    border:1px solid var(--line);
+    background:#fff;
+    border-radius:13px;
+    min-height:46px;
+    padding:10px 12px;
+    font-size:16px;
+    outline:none;
+  }
+  .sheet .mini{
+    color:var(--muted);
+    font-size:13px;
+    line-height:1.4;
+    margin:8px 0 0;
+  }
   .stat{
     background:var(--card);
     border:1px solid var(--line);
@@ -358,6 +401,8 @@
     .num{font-size:19px;padding-left:5px;padding-right:5px}
     .progress{grid-template-columns:1fr}
     .backup-actions{grid-template-columns:1fr}
+    .backup-btn.wide{grid-column:auto}
+    .setup-grid{grid-template-columns:1fr 105px}
   }
 </style>
 </head>
@@ -388,6 +433,7 @@
   <section id="historyView" class="hidden">
     <div class="progress" id="progressStats"></div>
     <div class="backup-actions">
+      <button class="backup-btn wide" id="profileSetupBtn" type="button">Startgewichte bearbeiten</button>
       <button class="backup-btn" id="backupExportBtn" type="button">Backup exportieren</button>
       <button class="backup-btn" id="backupImportBtn" type="button">Backup importieren</button>
     </div>
@@ -427,11 +473,70 @@
   </div>
 </div>
 
+<div class="dialog hidden" id="setupDialog" role="dialog" aria-modal="true" aria-labelledby="setupTitle">
+  <div class="sheet">
+    <h2 id="setupTitle">Startgewichte einrichten</h2>
+    <p id="setupIntro">Diese App kann von mehreren Personen genutzt werden. Lege daher einmal deine eigenen Startgewichte fest. Freitag bleibt als Trainingstag voreingestellt.</p>
+
+    <div class="setup-name">
+      <div class="label">Profilname (optional)</div>
+      <input id="profileNameInput" type="text" maxlength="40" placeholder="z. B. Michael">
+    </div>
+
+    <div class="setup-grid">
+      <div class="setup-row">
+        <div>
+          <div class="label">Beinpresse</div>
+        </div>
+        <input class="num" id="setup_legpress" inputmode="decimal" type="text" placeholder="kg">
+      </div>
+      <div class="setup-row">
+        <div>
+          <div class="label">Bankdrücken</div>
+        </div>
+        <input class="num" id="setup_bench" inputmode="decimal" type="text" placeholder="kg">
+      </div>
+      <div class="setup-row">
+        <div>
+          <div class="label">Latzug</div>
+        </div>
+        <input class="num" id="setup_pulldown" inputmode="decimal" type="text" placeholder="kg">
+      </div>
+      <div class="setup-row">
+        <div>
+          <div class="label">Kabelrudern</div>
+        </div>
+        <input class="num" id="setup_row" inputmode="decimal" type="text" placeholder="kg">
+      </div>
+      <div class="setup-row">
+        <div>
+          <div class="label">Beinbeuger</div>
+        </div>
+        <input class="num" id="setup_legcurl" inputmode="decimal" type="text" placeholder="kg">
+      </div>
+      <div class="setup-row">
+        <div>
+          <div class="label">Seitheben (je Hand)</div>
+        </div>
+        <input class="num" id="setup_lateral" inputmode="decimal" type="text" placeholder="kg">
+      </div>
+    </div>
+
+    <p class="mini">Die App setzt daraus automatisch passende Aufwärmsätze. Später kannst du diese Werte jederzeit unter „Verlauf“ → „Startgewichte bearbeiten“ ändern.</p>
+
+    <div class="sheet-actions">
+      <button class="btn secondary" id="cancelSetup" type="button">Abbrechen</button>
+      <button class="btn primary" id="saveSetup" type="button">Speichern</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast" aria-live="polite"></div>
 
 <script>
 (function(){
-  const STORE = "friday_gym_app_v2";
+  const STORE = "friday_gym_app_v3";
+  const LEGACY_STORE = "friday_gym_app_v2";
 
   const basePlan = [
     {
@@ -529,23 +634,69 @@
     return Number.isFinite(n) && n >= 0 && n < 1000 ? n : "";
   }
 
+  const genericProfileDefaults = {
+    legpress: 100,
+    bench: 40,
+    pulldown: 40,
+    row: 40,
+    legcurl: 25,
+    lateral: 5
+  };
+
+  function applyWarmupRules(ex){
+    const workWeights = ex.sets.filter(s=>s.type==="work" && typeof s.weight==="number").map(s=>s.weight);
+    if(!workWeights.length) return;
+    const w = Number(workWeights[0]);
+    ex.sets.forEach((set, idx)=>{
+      if(set.type==="warmup" && typeof set.weight==="number"){
+        if(ex.id==="bench"){
+          set.weight = idx===0 ? Math.max(20, Math.round((w*0.55)/2.5)*2.5) : Math.max(20, Math.round((w*0.75)/2.5)*2.5);
+        }else{
+          const inc = ex.increment || 5;
+          set.weight = Math.max(0, Math.round((w*0.55)/inc)*inc);
+        }
+      }
+    });
+  }
+
+  function setExerciseWorkWeight(ex, weight){
+    if(ex.increment <= 0 || weight === "" || !Number.isFinite(Number(weight))) return;
+    ex.sets.forEach(set=>{
+      if(set.type==="work" && typeof set.weight==="number") set.weight = Number(weight);
+    });
+    applyWarmupRules(ex);
+  }
+
   function initialState(){
     const today = new Date();
     const todayUTC = new Date(Date.UTC(today.getFullYear(),today.getMonth(),today.getDate()));
+    const plan = clone(basePlan);
+    Object.entries(genericProfileDefaults).forEach(([id, weight])=>{
+      const ex = plan.find(x=>x.id===id);
+      if(ex) setExerciseWorkWeight(ex, weight);
+    });
     return {
       currentDate: upcomingFridayISO(todayUTC),
-      plan: clone(basePlan),
+      plan,
       draft: {},
       notes: {},
-      history: []
+      history: [],
+      profileName: "",
+      profileConfigured: false
     };
   }
   function loadState(){
     try{
-      const raw = localStorage.getItem(STORE);
+      const raw = localStorage.getItem(STORE) || localStorage.getItem(LEGACY_STORE);
       if(!raw) return initialState();
       const s = JSON.parse(raw);
       if(!s || !Array.isArray(s.plan) || !Array.isArray(s.history)) return initialState();
+      if(typeof s.profileName !== "string") s.profileName = "";
+      if(typeof s.profileConfigured !== "boolean"){
+        s.profileConfigured = true; // preserve existing users on update
+      }
+      if(!s.draft || typeof s.draft !== "object") s.draft = {};
+      if(!s.notes || typeof s.notes !== "object") s.notes = {};
       return s;
     }catch(e){
       return initialState();
@@ -570,12 +721,23 @@
   const finishSummary = document.getElementById("finishSummary");
   const exportDialog = document.getElementById("exportDialog");
   const exportText = document.getElementById("exportText");
+  const setupDialog = document.getElementById("setupDialog");
+  const profileNameInput = document.getElementById("profileNameInput");
   const toastEl = document.getElementById("toast");
 
   function draftKey(exId, idx, field){ return exId+"_"+idx+"_"+field; }
 
   function renderWorkout(){
     nextFridayText.textContent = formatDate(state.currentDate);
+    const datebox = nextFridayText.parentElement;
+    const oldChip = datebox.querySelector(".profile-chip");
+    if(oldChip) oldChip.remove();
+    if(state.profileName && state.profileName.trim()){
+      const chip = document.createElement("div");
+      chip.className = "profile-chip";
+      chip.textContent = "Profil: " + state.profileName.trim();
+      datebox.appendChild(chip);
+    }
     cards.innerHTML = "";
     state.plan.forEach(ex=>{
       const card=document.createElement("section");
@@ -757,20 +919,7 @@
         });
       }
       // warm-ups track current work weights heuristically, only for known patterns
-      const workWeights=ex.sets.filter(s=>s.type==="work" && typeof s.weight==="number").map(s=>s.weight);
-      if(workWeights.length){
-        const w=workWeights[0];
-        ex.sets.forEach((set,idx)=>{
-          if(set.type==="warmup" && typeof set.weight==="number"){
-            if(ex.id==="bench"){
-              set.weight = idx===0 ? Math.max(20, Math.round((w*0.55)/2.5)*2.5) : Math.max(20, Math.round((w*0.75)/2.5)*2.5);
-            }else{
-              const inc = ex.increment || 5;
-              set.weight = Math.max(0, Math.round((w*0.55)/inc)*inc);
-            }
-          }
-        });
-      }
+      applyWarmupRules(ex);
     });
 
     state.currentDate=nextFridayAfter(state.currentDate);
@@ -842,6 +991,66 @@
       exportText.select();
       showToast("Text ist markiert – bitte kopieren");
     }
+  }
+
+
+  function currentProfileWeights(){
+    const map = {};
+    state.plan.forEach(ex=>{
+      const firstWork = ex.sets.find(s=>s.type==="work" && typeof s.weight==="number");
+      if(firstWork) map[ex.id] = firstWork.weight;
+    });
+    return map;
+  }
+
+  function openSetup(forceInitial=false){
+    const weights = currentProfileWeights();
+    profileNameInput.value = state.profileName || "";
+    const ids = ["legpress","bench","pulldown","row","legcurl","lateral"];
+    ids.forEach(id=>{
+      const el = document.getElementById("setup_"+id);
+      if(el) el.value = weights[id] ?? genericProfileDefaults[id] ?? "";
+    });
+    const intro = document.getElementById("setupIntro");
+    if(forceInitial){
+      intro.textContent = "Diese App kann von mehreren Personen genutzt werden. Lege daher einmal deine eigenen Startgewichte fest. Freitag bleibt als Trainingstag voreingestellt.";
+    }else{
+      intro.textContent = "Passe hier deine persönlichen Startgewichte an. Die App berechnet daraus die Aufwärmsätze automatisch neu.";
+    }
+    document.getElementById("cancelSetup").style.display = forceInitial ? "none" : "";
+    setupDialog.dataset.initial = forceInitial ? "1" : "0";
+    setupDialog.classList.remove("hidden");
+  }
+
+  function closeSetup(){
+    if(setupDialog.dataset.initial === "1" && !state.profileConfigured) return;
+    setupDialog.classList.add("hidden");
+  }
+
+  function saveSetup(){
+    const ids = ["legpress","bench","pulldown","row","legcurl","lateral"];
+    const values = {};
+    for(const id of ids){
+      const input = document.getElementById("setup_"+id);
+      const val = safeNum(input.value);
+      if(val === "" || Number(val) <= 0){
+        alert("Bitte für alle Übungen ein sinnvolles Startgewicht eingeben.");
+        return;
+      }
+      values[id] = Number(val);
+    }
+
+    state.profileName = (profileNameInput.value || "").trim();
+    state.plan.forEach(ex=>{
+      if(values[ex.id] !== undefined) setExerciseWorkWeight(ex, values[ex.id]);
+    });
+    state.profileConfigured = true;
+    state.draft = {};
+    saveState();
+    setupDialog.classList.add("hidden");
+    renderWorkout();
+    renderHistory();
+    showToast("Startgewichte gespeichert");
   }
 
   function renderHistory(){
@@ -983,6 +1192,8 @@
       if(!ok) return;
 
       state = payload.appState;
+      if(typeof state.profileName !== "string") state.profileName = "";
+      if(typeof state.profileConfigured !== "boolean") state.profileConfigured = true;
       saveState();
       renderWorkout();
       renderHistory();
@@ -1005,10 +1216,12 @@
 
   tabWorkout.addEventListener("click",()=>switchTab("workout"));
   tabHistory.addEventListener("click",()=>switchTab("history"));
+  const profileSetupBtn = document.getElementById("profileSetupBtn");
   const backupExportBtn = document.getElementById("backupExportBtn");
   const backupImportBtn = document.getElementById("backupImportBtn");
   const backupFileInput = document.getElementById("backupFileInput");
 
+  profileSetupBtn.addEventListener("click", ()=>openSetup(false));
   backupExportBtn.addEventListener("click", exportBackup);
   backupImportBtn.addEventListener("click", () => backupFileInput.click());
   backupFileInput.addEventListener("change", async () => {
@@ -1023,8 +1236,11 @@
   document.getElementById("confirmFinish").addEventListener("click",finishWorkout);
   document.getElementById("closeExport").addEventListener("click",closeExportDialog);
   document.getElementById("copyExport").addEventListener("click",copyExportText);
+  document.getElementById("cancelSetup").addEventListener("click",closeSetup);
+  document.getElementById("saveSetup").addEventListener("click",saveSetup);
   finishDialog.addEventListener("click",e=>{ if(e.target===finishDialog) closeFinish(); });
   exportDialog.addEventListener("click",e=>{ if(e.target===exportDialog) closeExportDialog(); });
+  setupDialog.addEventListener("click",e=>{ if(e.target===setupDialog) closeSetup(); });
 
   // PWA installation + offline support
   const installBtn = document.getElementById("installBtn");
@@ -1061,6 +1277,9 @@
 
   renderWorkout();
   renderHistory();
+  if(!state.profileConfigured){
+    openSetup(true);
+  }
 })();
 </script>
 </body>

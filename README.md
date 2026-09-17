@@ -49,3 +49,14 @@ Das Backup umfasst:
 Beim Import wird der aktuelle lokale App-Stand nach einer Sicherheitsabfrage vollständig ersetzt.
 
 Empfehlung: Nach einigen Trainingseinheiten oder vor einem Handywechsel ein Backup exportieren und z. B. in der persönlichen Cloud speichern.
+
+
+## Gemeinsame Nutzung / Ersteinrichtung
+
+Beim ersten Start öffnet die App automatisch eine kurze Ersteinrichtung.
+Dort kann jede Person eigene Startgewichte für die Arbeitsätze festlegen.
+Diese Werte werden lokal auf dem jeweiligen Gerät gespeichert.
+
+Später können die Startgewichte jederzeit in der App unter:
+`Verlauf → Startgewichte bearbeiten`
+angepasst werden.
