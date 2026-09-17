@@ -60,3 +60,16 @@ Diese Werte werden lokal auf dem jeweiligen Gerät gespeichert.
 Später können die Startgewichte jederzeit in der App unter:
 `Verlauf → Startgewichte bearbeiten`
 angepasst werden.
+
+
+## Finaler Freitag-Plan (18 Sätze)
+
+1. Beinpresse: 1 Aufwärmsatz + 2 Arbeitssätze (8–12)
+2. Bankdrücken: 2 Aufwärmsätze + 2 Arbeitssätze (6–10)
+3. Latzug: 1 Aufwärmsatz + 2 Arbeitssätze (8–12)
+4. Kabelrudern: 2 Arbeitssätze (8–12), kein eigener Aufwärmsatz
+5. Beinbeuger: 2 Arbeitssätze (10–15), kein eigener Aufwärmsatz
+6. Seitheben: 2 Arbeitssätze (12–20)
+7. Schräge Sit-ups: 2 Arbeitssätze (10–15 je Seite)
+
+Seitheben und schräge Sit-ups können als Supersatz ausgeführt werden.

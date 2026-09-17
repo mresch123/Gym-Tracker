@@ -426,7 +426,7 @@
   </div>
 
   <section id="workoutView">
-    <p class="info">Die Gewichte sind vorausgefüllt. Trage während der Einheit nur die Wiederholungen ein. Nach dem Abschluss wird die Einheit gespeichert und der nächste Freitag vorbereitet.</p>
+    <p class="info">Finaler Freitag-Plan · 18 Sätze gesamt. Die Gewichte sind vorausgefüllt. Trage während der Einheit nur die Wiederholungen ein. Nach dem Abschluss wird die Einheit gespeichert und der nächste Freitag vorbereitet.</p>
     <div id="cards"></div>
   </section>
 
@@ -540,7 +540,7 @@
 
   const basePlan = [
     {
-      id:"legpress", name:"1. Beinpresse", subtitle:"Startwert · maschinenabhängig", unit:"kg",
+      id:"legpress", name:"1. Beinpresse", subtitle:"1 Aufwärmsatz + 2 Arbeitssätze", unit:"kg",
       increment:10,
       sets:[
         {label:"Aufwärmen", target:"Ziel 10–12 Wdh.", type:"warmup", weight:60, min:10, max:12},
@@ -549,7 +549,7 @@
       ]
     },
     {
-      id:"bench", name:"2. Bankdrücken", subtitle:"bekanntes Arbeitsgewicht", unit:"kg",
+      id:"bench", name:"2. Bankdrücken", subtitle:"2 Aufwärmsätze + 2 Arbeitssätze", unit:"kg",
       increment:2.5,
       sets:[
         {label:"Warm-up 1", target:"Ziel 8–10 Wdh.", type:"warmup", weight:30, min:8, max:10},
@@ -559,7 +559,7 @@
       ]
     },
     {
-      id:"pulldown", name:"3. Latzug", subtitle:"bekanntes Arbeitsgewicht", unit:"kg",
+      id:"pulldown", name:"3. Latzug", subtitle:"1 Aufwärmsatz + 2 Arbeitssätze", unit:"kg",
       increment:5,
       sets:[
         {label:"Aufwärmen", target:"Ziel 8–10 Wdh.", type:"warmup", weight:30, min:8, max:10},
@@ -576,25 +576,23 @@
       ]
     },
     {
-      id:"legcurl", name:"5. Beinbeuger", subtitle:"Startwert", unit:"kg",
+      id:"legcurl", name:"5. Beinbeuger", subtitle:"2 Arbeitssätze · kein eigener Aufwärmsatz", unit:"kg",
       increment:5,
       sets:[
-        {label:"Aufwärmen", target:"Ziel 10–12 Wdh.", type:"warmup", weight:20, min:10, max:12},
         {label:"Arbeit 1", target:"Ziel 10–15 Wdh.", type:"work", weight:35, min:10, max:15},
         {label:"Arbeit 2", target:"Ziel 10–15 Wdh.", type:"work", weight:35, min:10, max:15}
       ]
     },
     {
-      id:"lateral", name:"6. Seitheben", subtitle:"Kurzhanteln · Gewicht je Hand", unit:"kg/Hand",
+      id:"lateral", name:"6. Seitheben", subtitle:"2 Arbeitssätze · Supersatz mit schrägen Sit-ups", unit:"kg/Hand",
       increment:1,
       sets:[
-        {label:"Aufwärmen", target:"Ziel 10–12 Wdh.", type:"warmup", weight:4, min:10, max:12},
         {label:"Arbeit 1", target:"Ziel 12–20 Wdh.", type:"work", weight:7, min:12, max:20},
         {label:"Arbeit 2", target:"Ziel 12–20 Wdh.", type:"work", weight:7, min:12, max:20}
       ]
     },
     {
-      id:"situps", name:"7. Schräge Sit-ups", subtitle:"Körpergewicht", unit:"Körpergewicht",
+      id:"situps", name:"7. Schräge Sit-ups", subtitle:"2 Arbeitssätze · Supersatz mit Seitheben", unit:"Körpergewicht",
       increment:0,
       sets:[
         {label:"Satz 1", target:"Ziel 10–15 je Seite", type:"work", weight:"", min:10, max:15},
@@ -667,6 +665,21 @@
     applyWarmupRules(ex);
   }
 
+  function normalizePlanToFinalFriday(existingPlan){
+    const finalPlan = clone(basePlan);
+    if(!Array.isArray(existingPlan)) return finalPlan;
+
+    finalPlan.forEach(finalEx=>{
+      const oldEx = existingPlan.find(x=>x && x.id===finalEx.id);
+      if(!oldEx || !Array.isArray(oldEx.sets)) return;
+      const oldWork = oldEx.sets.find(s=>s && s.type==="work" && typeof s.weight==="number");
+      if(oldWork && finalEx.increment > 0){
+        setExerciseWorkWeight(finalEx, Number(oldWork.weight));
+      }
+    });
+    return finalPlan;
+  }
+
   function initialState(){
     const today = new Date();
     const todayUTC = new Date(Date.UTC(today.getFullYear(),today.getMonth(),today.getDate()));
@@ -697,12 +710,19 @@
       }
       if(!s.draft || typeof s.draft !== "object") s.draft = {};
       if(!s.notes || typeof s.notes !== "object") s.notes = {};
+      s.plan = normalizePlanToFinalFriday(s.plan);
       return s;
     }catch(e){
       return initialState();
     }
   }
   let state = loadState();
+
+  ["legcurl","lateral"].forEach(id=>{
+    Object.keys(state.draft || {}).forEach(k=>{
+      if(k.startsWith(id+"_")) delete state.draft[k];
+    });
+  });
 
   function saveState(){
     localStorage.setItem(STORE,JSON.stringify(state));
@@ -1114,7 +1134,7 @@
 
 
   const BACKUP_SCHEMA = "freitag-gym-backup";
-  const BACKUP_VERSION = 1;
+  const BACKUP_VERSION = 2;
 
   function makeBackupPayload(){
     return {
@@ -1151,7 +1171,7 @@
   function isValidBackupPayload(payload){
     if(!payload || typeof payload !== "object") return false;
     if(payload.schema !== BACKUP_SCHEMA) return false;
-    if(payload.version !== BACKUP_VERSION) return false;
+    if(payload.version !== 1 && payload.version !== BACKUP_VERSION) return false;
     const s = payload.appState;
     if(!s || typeof s !== "object") return false;
     if(!Array.isArray(s.plan) || !Array.isArray(s.history)) return false;
@@ -1194,6 +1214,7 @@
       state = payload.appState;
       if(typeof state.profileName !== "string") state.profileName = "";
       if(typeof state.profileConfigured !== "boolean") state.profileConfigured = true;
+      state.plan = normalizePlanToFinalFriday(state.plan);
       saveState();
       renderWorkout();
       renderHistory();
