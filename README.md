@@ -80,3 +80,13 @@ Seitheben und schräge Sit-ups können als Supersatz ausgeführt werden.
 - Notizfelder aus dem Training entfernt.
 - Chat-Export enthält nur Trainingswerte und Progressionshinweise.
 - Cache-Strategie aktualisiert, damit neue App-Versionen zuverlässig geladen werden.
+
+
+## Version 2 (18.09.2026 16:37)
+
+- Belohnungssystem: Freitag-Streak, Monatsfortschritt, 12-Wochen-Konstanz und 4er-Meilensteine.
+- Beinpresse: Maschinenstufen 21–213 kg in 8-kg-Schritten; aktuelles Arbeitsgewicht 101 kg.
+- Beinbeuger: Knie 10, Knöchel 4.
+- Sätze können in der laufenden Einheit mit − entfernt und mit + Satz ergänzt werden.
+- Satzänderungen gelten nur für die aktuelle Einheit.
+- Kopfzeile v.2, Beschreibungstext entfernt, keine Notizfelder.

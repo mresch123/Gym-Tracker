@@ -1,4 +1,4 @@
-const CACHE_NAME = "freitag-gym-final18-nonotes-v7";
+const CACHE_NAME = "freitag-gym-v2-20260918";
 const APP_SHELL = [
   "./",
   "./index.html",
