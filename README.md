@@ -90,3 +90,15 @@ Seitheben und schräge Sit-ups können als Supersatz ausgeführt werden.
 - Sätze können in der laufenden Einheit mit − entfernt und mit + Satz ergänzt werden.
 - Satzänderungen gelten nur für die aktuelle Einheit.
 - Kopfzeile v.2, Beschreibungstext entfernt, keine Notizfelder.
+
+
+## Version 2.1 (20.09.2026 09:34)
+
+- Reihenfolge: Beinpresse → Beinbeuger → Bankdrücken → Latzug → Kabelrudern → Seitheben → schräge Sit-ups.
+- Freitag bleibt der Ankertag.
+- Gültiges Wochenfenster: Donnerstag 00:00 bis Sonntag 24:00.
+- Donnerstag zählt als vorgezogen; Samstag/Sonntag als Nachholen.
+- Die Serie bleibt bis Sonntag offen und geht erst nach verpasstem Nachholfenster verloren.
+- Pro Freitagsslot zählt höchstens eine Einheit.
+- Verlauf speichert tatsächliches Trainingsdatum und den zugehörigen Freitag.
+- Profil zeigt passende Hinweise für Vorziehen, regulären Freitag und Nachholen.

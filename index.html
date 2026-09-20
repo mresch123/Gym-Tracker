@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Freitag Gym">
 
 <title>Freitag Gym</title>
-<meta name="app-build" content="GYM-v2 · 18.09.2026 16:37">
+<meta name="app-build" content="GYM-v2.1 · 20.09.2026 09:34">
 <style>
   :root{
     --bg:#f7f7f5;
@@ -435,7 +435,7 @@
 <main class="app">
   <div class="top">
     <div>
-      <div class="eyebrow">Freitag · Ganzkörpertraining · v.2</div>
+      <div class="eyebrow">Freitag · Ganzkörpertraining · v.2.1</div>
       <h1>Gym-Tracker</h1>
     </div>
     <div class="datebox">
@@ -574,7 +574,15 @@
       ]
     },
     {
-      id:"bench", name:"2. Bankdrücken", subtitle:"2 Aufwärmsätze + 2 Arbeitssätze", unit:"kg",
+      id:"legcurl", name:"2. Beinbeuger", subtitle:"Maschine · Knie 10 · Knöchel 4", unit:"kg",
+      increment:5,
+      sets:[
+        {label:"Arbeit 1", target:"Ziel 10–15 Wdh.", type:"work", weight:35, min:10, max:15},
+        {label:"Arbeit 2", target:"Ziel 10–15 Wdh.", type:"work", weight:35, min:10, max:15}
+      ]
+    },
+    {
+      id:"bench", name:"3. Bankdrücken", subtitle:"2 Aufwärmsätze + 2 Arbeitssätze", unit:"kg",
       increment:2.5,
       sets:[
         {label:"Warm-up 1", target:"Ziel 8–10 Wdh.", type:"warmup", weight:30, min:8, max:10},
@@ -584,7 +592,7 @@
       ]
     },
     {
-      id:"pulldown", name:"3. Latzug", subtitle:"1 Aufwärmsatz + 2 Arbeitssätze", unit:"kg",
+      id:"pulldown", name:"4. Latzug", subtitle:"1 Aufwärmsatz + 2 Arbeitssätze", unit:"kg",
       increment:5,
       sets:[
         {label:"Aufwärmen", target:"Ziel 8–10 Wdh.", type:"warmup", weight:30, min:8, max:10},
@@ -593,19 +601,11 @@
       ]
     },
     {
-      id:"row", name:"4. Kabelrudern", subtitle:"2 Arbeitssätze · kein eigener Aufwärmsatz", unit:"kg",
+      id:"row", name:"5. Kabelrudern", subtitle:"2 Arbeitssätze · kein eigener Aufwärmsatz", unit:"kg",
       increment:5,
       sets:[
         {label:"Arbeit 1", target:"Ziel 8–12 Wdh.", type:"work", weight:50, min:8, max:12},
         {label:"Arbeit 2", target:"Ziel 8–12 Wdh.", type:"work", weight:50, min:8, max:12}
-      ]
-    },
-    {
-      id:"legcurl", name:"5. Beinbeuger", subtitle:"Maschine · Knie 10 · Knöchel 4", unit:"kg",
-      increment:5,
-      sets:[
-        {label:"Arbeit 1", target:"Ziel 10–15 Wdh.", type:"work", weight:35, min:10, max:15},
-        {label:"Arbeit 2", target:"Ziel 10–15 Wdh.", type:"work", weight:35, min:10, max:15}
       ]
     },
     {
@@ -669,6 +669,41 @@
     const d = parseDateOnly(iso);
     d.setUTCDate(d.getUTCDate()+7);
     return dateToISO(d);
+  }
+  function addDaysISO(iso, days){
+    const d = parseDateOnly(iso);
+    d.setUTCDate(d.getUTCDate()+days);
+    return dateToISO(d);
+  }
+
+  function todayISO(){
+    const now = new Date();
+    return dateToISO(new Date(Date.UTC(now.getFullYear(),now.getMonth(),now.getDate())));
+  }
+
+  function fridaySlotForDateISO(actualIso){
+    const d = parseDateOnly(actualIso);
+    const day = d.getUTCDay();
+    if(day===4) d.setUTCDate(d.getUTCDate()+1);      // Donnerstag -> Freitag
+    else if(day===5) {}                              // Freitag
+    else if(day===6) d.setUTCDate(d.getUTCDate()-1);// Samstag -> Freitag
+    else if(day===0) d.setUTCDate(d.getUTCDate()-2);// Sonntag -> Freitag
+    else return null;                                // außerhalb Do–So
+    return dateToISO(d);
+  }
+
+  function targetFridayForToday(){
+    const iso = todayISO();
+    const validSlot = fridaySlotForDateISO(iso);
+    if(validSlot) return validSlot;
+    const d = parseDateOnly(iso);
+    const delta = (5-d.getUTCDay()+7)%7;
+    d.setUTCDate(d.getUTCDate()+delta);
+    return dateToISO(d);
+  }
+
+  function isTrainingWindowToday(){
+    return fridaySlotForDateISO(todayISO()) !== null;
   }
   function formatDate(iso){
     const d=parseDateOnly(iso);
@@ -738,7 +773,7 @@
       if(ex) setExerciseWorkWeight(ex, weight);
     });
     return {
-      currentDate: upcomingFridayISO(todayUTC),
+      currentDate: targetFridayForToday(),
       plan,
       draft: {},
       notes: {},
@@ -746,7 +781,7 @@
       profileName: "",
       profileConfigured: false,
       sessionSets: {},
-      appVersion: 2
+      appVersion: 21
     };
   }
   function loadState(){
@@ -768,6 +803,10 @@
         if(lp){ setExerciseWorkWeight(lp,101); applyWarmupRules(lp); }
         s.sessionSets={};
         s.appVersion=2;
+      }
+      if(s.appVersion < 21){
+        s.currentDate = targetFridayForToday();
+        s.appVersion = 21;
       }
       return s;
     }catch(e){
@@ -831,29 +870,59 @@
   }
 
   function rewardStats(){
-    const completed=new Set((state.history||[]).map(s=>s.date));
-    const now=new Date(); const today=new Date(Date.UTC(now.getFullYear(),now.getMonth(),now.getDate()));
-    const lastDue=previousOrSameFridayISO(today);
-    let streak=0, cursor=parseDateOnly(lastDue);
-    while(completed.has(dateToISO(cursor))){ streak++; cursor.setUTCDate(cursor.getUTCDate()-7); }
-    let done12=0; cursor=parseDateOnly(lastDue);
-    for(let i=0;i<12;i++){ if(completed.has(dateToISO(cursor))) done12++; cursor.setUTCDate(cursor.getUTCDate()-7); }
-    const mf=allFridaysInMonth(today.getUTCFullYear(),today.getUTCMonth());
-    const monthDone=mf.filter(d=>completed.has(d)).length;
+    const completedSlots=new Set((state.history||[]).map(s=>s.slotFriday || fridaySlotForDateISO(s.actualDate||s.date) || s.date));
+    const target=targetFridayForToday();
+    const targetDone=completedSlots.has(target);
+
+    // Die laufende Serie bleibt Do–So erhalten, solange das Nachholfenster offen ist.
+    let anchor=target;
+    if(!targetDone) anchor=addDaysISO(target,-7);
+
+    let streak=0, cursor=parseDateOnly(anchor);
+    while(completedSlots.has(dateToISO(cursor))){
+      streak++;
+      cursor.setUTCDate(cursor.getUTCDate()-7);
+    }
+
+    let done12=0; cursor=parseDateOnly(target);
+    for(let k=0;k<12;k++){
+      if(completedSlots.has(dateToISO(cursor))) done12++;
+      cursor.setUTCDate(cursor.getUTCDate()-7);
+    }
+
+    const now=new Date();
+    const todayUTC=new Date(Date.UTC(now.getFullYear(),now.getMonth(),now.getDate()));
+    const mf=allFridaysInMonth(todayUTC.getUTCFullYear(),todayUTC.getUTCMonth());
+    const monthDone=mf.filter(d=>completedSlots.has(d)).length;
     const milestone=streak===0?4:(Math.floor(streak/4)+1)*4;
-    let badge="Start"; if(streak>=12) badge="Gold"; else if(streak>=8) badge="Silber"; else if(streak>=4) badge="Bronze";
-    return {streak,done12,monthDone,monthTotal:mf.length,milestone,badge};
+    let badge="Start";
+    if(streak>=12) badge="Gold";
+    else if(streak>=8) badge="Silber";
+    else if(streak>=4) badge="Bronze";
+
+    return {streak,done12,monthDone,monthTotal:mf.length,milestone,badge,target,targetDone};
   }
+
   function renderRewardCard(){
     const r=rewardStats();
     const name=state.profileName&&state.profileName.trim()?state.profileName.trim():"Dein Profil";
     const consistency=Math.round((r.done12/12)*100);
     const toNext=Math.max(0,r.milestone-r.streak);
+    const day=parseDateOnly(todayISO()).getUTCDay();
+
+    let status="";
+    if(r.targetDone) status="✅ Wochenziel erledigt – Serie gesichert.";
+    else if(day===4) status="💪 Vorziehen möglich: Heute zählt bereits für Freitag.";
+    else if(day===5) status="🔥 Heute ist dein regulärer Trainingstag.";
+    else if(day===6) status="⏳ Freitag verpasst? Nachholen bis Sonntag 24:00 möglich.";
+    else if(day===0) status="⚠️ Serie retten: Heute letzte Möglichkeit bis 24:00.";
+    else status="Nächster Trainingsslot: Donnerstag bis Sonntag.";
+
     rewardCard.className="reward-card";
-    rewardCard.innerHTML=`<div class="reward-top"><div><div class="reward-name">${name}</div><div class="reward-streak">🔥 ${r.streak} Freitage in Folge</div></div><div class="reward-badge">${r.badge}</div></div><div class="reward-grid"><div class="reward-metric"><span>Dieser Monat</span><strong>${r.monthDone}/${r.monthTotal} Trainings</strong></div><div class="reward-metric"><span>12-Wochen-Konstanz</span><strong>${r.done12}/12 · ${consistency}%</strong></div></div><div class="reward-progress"><div style="width:${Math.min(100,(r.streak/r.milestone)*100)}%"></div></div><div class="reward-next">${toNext===0?"Meilenstein erreicht.":`Noch ${toNext} Freitag${toNext===1?"":"e"} bis zum nächsten ${r.milestone}er-Meilenstein.`}</div>`;
+    rewardCard.innerHTML=`<div class="reward-top"><div><div class="reward-name">${name}</div><div class="reward-streak">🔥 ${r.streak} Freitage in Folge</div></div><div class="reward-badge">${r.badge}</div></div><div class="reward-grid"><div class="reward-metric"><span>Dieser Monat</span><strong>${r.monthDone}/${r.monthTotal} Trainings</strong></div><div class="reward-metric"><span>12-Wochen-Konstanz</span><strong>${r.done12}/12 · ${consistency}%</strong></div></div><div class="reward-progress"><div style="width:${Math.min(100,(r.streak/r.milestone)*100)}%"></div></div><div class="reward-next"><strong>${status}</strong></div><div class="reward-next">${toNext===0?"Meilenstein erreicht.":`Noch ${toNext} Freitag${toNext===1?"":"e"} bis zum nächsten ${r.milestone}er-Meilenstein.`}</div>`;
   }
 
-  function renderWorkout(){
+    function renderWorkout(){
     renderRewardCard();
     nextFridayText.textContent=formatDate(state.currentDate);
     const datebox=nextFridayText.parentElement; const oldChip=datebox.querySelector(".profile-chip"); if(oldChip) oldChip.remove();
@@ -942,8 +1011,17 @@
   function closeFinish(){ finishDialog.classList.add("hidden"); }
 
   function finishWorkout(){
+    const actualDate=todayISO();
+    const slotFriday=fridaySlotForDateISO(actualDate);
+    if(!slotFriday){
+      alert("Für die Freitags-Serie zählt ein Training von Donnerstag bis Sonntag. Heute liegt außerhalb dieses Fensters.");
+      return;
+    }
+
     const session={
-      date:state.currentDate,
+      date:actualDate,
+      actualDate,
+      slotFriday,
       exercises:state.plan.map(ex=>({
         id:ex.id,
         name:ex.name,
@@ -952,6 +1030,9 @@
         progression:progressionFor(ex)
       }))
     };
+
+    // Pro Freitagsslot zählt maximal eine Einheit.
+    state.history=state.history.filter(s=>(s.slotFriday || fridaySlotForDateISO(s.actualDate||s.date) || s.date)!==slotFriday);
     state.history.unshift(session);
     if(state.history.length>60) state.history=state.history.slice(0,60);
 
@@ -969,20 +1050,25 @@
       applyWarmupRules(ex);
     });
 
-    state.currentDate=nextFridayAfter(state.currentDate);
+    state.currentDate=nextFridayAfter(slotFriday);
     state.draft={};
     state.notes={};
     state.sessionSets={};
+    state.appVersion=21;
     saveState();
     closeFinish();
     renderWorkout();
     renderHistory();
-    showToast("Training gespeichert");
+    showToast("Training gespeichert · Serie gesichert");
   }
 
   function buildChatExport(){
     const lines = [];
-    lines.push(`Freitag Gym – ${formatDate(state.currentDate)}`);
+    const actual=todayISO();
+    const slot=fridaySlotForDateISO(actual);
+    let heading=`Gym v2.1 – ${formatDate(actual)}`;
+    if(slot && actual!==slot) heading+=` · zählt für Freitag ${formatDate(slot)}`;
+    lines.push(heading);
     state.plan.forEach(ex=>{
       const work = getWorkData(ex).filter(s=>s.type==="work");
       const repsEntered = work.some(s=>s.reps !== "");
@@ -1093,7 +1179,7 @@
     state.profileConfigured = true;
     state.draft = {};
     state.sessionSets = {};
-    state.appVersion = 2;
+    state.appVersion = 21;
     saveState();
     setupDialog.classList.add("hidden");
     renderWorkout();
@@ -1121,7 +1207,7 @@
     [
       ["Einheiten",sessions.length],
       ["Steigerungen",increases],
-      ["Letztes Training",formatDate(last.date).replace(/^[^,]+,\s*/,"")]
+      ["Letztes Training",formatDate(last.actualDate||last.date).replace(/^[^,]+,\s*/,"")]
     ].forEach(([label,val])=>{
       const d=document.createElement("div"); d.className="stat";
       const s=document.createElement("span"); s.textContent=label;
@@ -1135,7 +1221,7 @@
       const top=document.createElement("div"); top.className="history-top";
       const left=document.createElement("div");
       const d=document.createElement("div"); d.className="history-date"; d.textContent=formatDate(session.date);
-      const m=document.createElement("div"); m.className="history-meta"; m.textContent="Freitag · Ganzkörpertraining · v.2";
+      const m=document.createElement("div"); m.className="history-meta"; m.textContent="Freitag · Ganzkörpertraining · v.2.1";
       left.append(d,m);
       const del=document.createElement("button"); del.type="button"; del.className="btn danger"; del.style.minHeight="38px"; del.style.padding="6px 10px"; del.style.fontSize="13px"; del.textContent="Löschen";
       del.addEventListener("click",()=>{
@@ -1162,7 +1248,7 @@
 
 
   const BACKUP_SCHEMA = "freitag-gym-backup";
-  const BACKUP_VERSION = 2;
+  const BACKUP_VERSION = 3;
 
   function makeBackupPayload(){
     return {
@@ -1199,7 +1285,7 @@
   function isValidBackupPayload(payload){
     if(!payload || typeof payload !== "object") return false;
     if(payload.schema !== BACKUP_SCHEMA) return false;
-    if(payload.version !== 1 && payload.version !== BACKUP_VERSION) return false;
+    if(![1,2,3].includes(payload.version)) return false;
     const s = payload.appState;
     if(!s || typeof s !== "object") return false;
     if(!Array.isArray(s.plan) || !Array.isArray(s.history)) return false;
@@ -1245,7 +1331,7 @@
       state.notes = {};
       state.plan = normalizePlanToFinalFriday(state.plan);
       state.sessionSets = {};
-      state.appVersion = 2;
+      state.appVersion = 21;
       saveState();
       renderWorkout();
       renderHistory();
