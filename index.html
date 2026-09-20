@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-title" content="Freitag Gym">
 
 <title>Freitag Gym</title>
-<meta name="app-build" content="GYM-v2.1 · 20.09.2026 09:34">
+<meta name="app-build" content="GYM-v2.1.2 · 20.09.2026 22:10">
 <style>
   :root{
     --bg:#f7f7f5;
@@ -238,6 +238,20 @@
     background:#f4f4f2;
     color:var(--muted);
   }
+  .trend-hint{
+    margin-top:7px;
+    border-radius:12px;
+    padding:9px 11px;
+    font-size:13px;
+    line-height:1.4;
+    background:#f6f6f4;
+    color:var(--muted);
+    border:1px solid #e7e7e4;
+  }
+  .trend-hint strong{display:block;color:var(--text);margin-bottom:2px}
+  .trend-hint.progress{background:#f2f6f3}
+  .trend-hint.watch{background:#f8f5ed}
+  .trend-hint.plateau{background:#f7eeee}
   .suggestion.up{color:var(--ok)}
   .suggestion.hold{color:var(--warn)}
   .footerbar{
@@ -435,7 +449,7 @@
 <main class="app">
   <div class="top">
     <div>
-      <div class="eyebrow">Freitag · Ganzkörpertraining · v.2.1</div>
+      <div class="eyebrow">Freitag · Ganzkörpertraining · v.2.1.2.2</div>
       <h1>Gym-Tracker</h1>
     </div>
     <div class="datebox">
@@ -545,6 +559,12 @@
         </div>
         <input class="num" id="setup_lateral" inputmode="decimal" type="text" placeholder="kg">
       </div>
+      <div class="setup-row">
+        <div>
+          <div class="label">Bauchmaschine</div>
+        </div>
+        <input class="num" id="setup_abmachine" inputmode="decimal" type="text" placeholder="kg">
+      </div>
     </div>
 
     <p class="mini">Die App setzt daraus automatisch passende Aufwärmsätze. Später kannst du diese Werte jederzeit unter „Verlauf“ → „Startgewichte bearbeiten“ ändern.</p>
@@ -609,7 +629,7 @@
       ]
     },
     {
-      id:"lateral", name:"6. Seitheben", subtitle:"2 Arbeitssätze · Supersatz mit schrägen Sit-ups", unit:"kg/Hand",
+      id:"lateral", name:"6. Seitheben", subtitle:"2 Arbeitssätze · Supersatz mit Bauchmaschine", unit:"kg/Hand",
       increment:1,
       sets:[
         {label:"Arbeit 1", target:"Ziel 12–20 Wdh.", type:"work", weight:7, min:12, max:20},
@@ -617,11 +637,11 @@
       ]
     },
     {
-      id:"situps", name:"7. Schräge Sit-ups", subtitle:"2 Arbeitssätze · Supersatz mit Seitheben", unit:"Körpergewicht",
-      increment:0,
+      id:"abmachine", name:"7. Bauchmaschine", subtitle:"2 Arbeitssätze · 5-kg-Stufen", unit:"kg",
+      increment:5,
       sets:[
-        {label:"Satz 1", target:"Ziel 10–15 je Seite", type:"work", weight:"", min:10, max:15},
-        {label:"Satz 2", target:"Ziel 10–15 je Seite", type:"work", weight:"", min:10, max:15}
+        {label:"Arbeit 1", target:"Ziel 10–15 Wdh.", type:"work", weight:30, min:10, max:15},
+        {label:"Arbeit 2", target:"Ziel 10–15 Wdh.", type:"work", weight:30, min:10, max:15}
       ]
     }
   ];
@@ -721,7 +741,8 @@
     pulldown: 40,
     row: 40,
     legcurl: 25,
-    lateral: 5
+    lateral: 5,
+    abmachine: 30
   };
 
   function applyWarmupRules(ex){
@@ -957,7 +978,7 @@
       });
       const add=document.createElement("button"); add.type="button"; add.className="add-set"; add.textContent="+ Satz"; add.addEventListener("click",()=>addSessionSet(ex)); card.appendChild(add);
       const suggestion=document.createElement("div"); suggestion.className="suggestion"; suggestion.dataset.suggestion=ex.id; suggestion.textContent="Progression wird nach den Arbeitssätzen bewertet."; card.appendChild(suggestion);
-      cards.appendChild(card); updateSuggestion(ex,card);
+      cards.appendChild(card); updateSuggestion(ex,card); renderExerciseTrend(ex,card);
     });
   }
 
@@ -987,6 +1008,123 @@
     const p=progressionFor(ex);
     el.className="suggestion"+(p.mode==="up"?" up":p.mode==="hold"?" hold":"");
     el.textContent=p.text;
+  }
+
+  function historicalExerciseEntries(exId){
+    const entries=[];
+    (state.history||[]).forEach(session=>{
+      const item=(session.exercises||[]).find(e=>e.id===exId);
+      if(!item) return;
+
+      let work=(item.sets||[]).filter(s=>s.type==="work"&&!s.extra);
+      if(!work.length) work=(item.sets||[]).filter(s=>s.type==="work");
+      if(!work.length) return;
+
+      const weights=work.map(s=>Number(s.weight)).filter(Number.isFinite);
+      const reps=work.map(s=>Number(s.reps)).filter(Number.isFinite);
+      if(!weights.length || reps.length!==work.length) return;
+
+      entries.push({
+        date:session.actualDate||session.date,
+        weight:weights[0],
+        reps,
+        totalReps:reps.reduce((a,b)=>a+b,0),
+        minTarget:Number(work[0].min||0),
+        progression:item.progression||null
+      });
+    });
+    return entries;
+  }
+
+  function exerciseTrend(ex){
+    if(ex.increment<=0) return null;
+
+    const entries=historicalExerciseEntries(ex.id);
+    if(!entries.length) return null;
+
+    // Nach einer erfolgreichen Steigerung beginnt für das neue Gewicht eine neue Phase.
+    if(entries[0].progression && entries[0].progression.mode==="up") return null;
+
+    const currentWork=ex.sets.find(s=>s.type==="work");
+    if(!currentWork || !Number.isFinite(Number(currentWork.weight))) return null;
+    const currentWeight=Number(currentWork.weight);
+
+    // Nur direkt aufeinanderfolgende Einheiten mit demselben Arbeitsgewicht.
+    const same=[];
+    for(const entry of entries){
+      if(Math.abs(entry.weight-currentWeight)>0.001) break;
+      same.push(entry);
+    }
+    if(!same.length) return null;
+
+    // Zwei Einheiten hintereinander unter dem unteren Zielbereich.
+    if(same.length>=2){
+      const lastTwo=same.slice(0,2);
+      const bothBelow=lastTwo.every(e=>e.reps.some(r=>r<e.minTarget));
+      if(bothBelow){
+        return {
+          mode:"watch",
+          title:"Arbeitsgewicht/Erholung prüfen",
+          text:`${currentWeight} ${ex.unit} · in 2 Einheiten Zielbereich unterschritten. Technik, Erholung und Belastung prüfen.`
+        };
+      }
+    }
+
+    if(same.length<3) return null;
+
+    const recent=same.slice(0,Math.min(5,same.length));
+    const chronological=[...recent].reverse();
+    const first=chronological[0];
+    const latest=chronological[chronological.length-1];
+    const gain=latest.totalReps-first.totalReps;
+
+    const lastThree=[...same.slice(0,3)].reverse();
+    const totals=lastThree.map(e=>e.totalReps);
+    const range=Math.max(...totals)-Math.min(...totals);
+    const repsText=lastThree.map(e=>e.reps.join("/")).join(" → ");
+
+    // Reps steigen: echte Progression auch ohne mehr Gewicht.
+    if(gain>=2){
+      return {
+        mode:"progress",
+        title:"Fortschritt bei gleichem Gewicht",
+        text:`${currentWeight} ${ex.unit} seit ${same.length} Einheiten · ${repsText}. Noch kein Plateau.`
+      };
+    }
+
+    // Längerer Stillstand.
+    if(same.length>=5 && gain<2){
+      return {
+        mode:"plateau",
+        title:"Plateau prüfen",
+        text:`${currentWeight} ${ex.unit} seit ${same.length} Einheiten · zuletzt ${repsText}. Belastung, Technik und Regeneration prüfen.`
+      };
+    }
+
+    // Früher Warnhinweis ab 3 Einheiten.
+    if(range<=1 || gain<=0){
+      return {
+        mode:"watch",
+        title:"Seit 3 Einheiten keine klare Progression",
+        text:`${currentWeight} ${ex.unit} · ${repsText}. Noch beobachten; bei anhaltender Stagnation Plateau prüfen.`
+      };
+    }
+
+    return null;
+  }
+
+  function renderExerciseTrend(ex,card){
+    const trend=exerciseTrend(ex);
+    if(!trend) return;
+    const el=document.createElement("div");
+    el.className="trend-hint "+trend.mode;
+    el.dataset.trend=ex.id;
+    const title=document.createElement("strong");
+    title.textContent=trend.title;
+    const text=document.createElement("div");
+    text.textContent=trend.text;
+    el.append(title,text);
+    card.appendChild(el);
   }
 
   function showToast(msg){
@@ -1089,6 +1227,11 @@
         lines.push(`→ ${prog.text}`);
       }
 
+      const trend=exerciseTrend(ex);
+      if(trend){
+        lines.push(`Trend: ${trend.title} – ${trend.text}`);
+      }
+
     });
 
     if(lines.length===1){
@@ -1138,7 +1281,7 @@
   function openSetup(forceInitial=false){
     const weights = currentProfileWeights();
     profileNameInput.value = state.profileName || "";
-    const ids = ["legpress","bench","pulldown","row","legcurl","lateral"];
+    const ids = ["legpress","bench","pulldown","row","legcurl","lateral","abmachine"];
     ids.forEach(id=>{
       const el=document.getElementById("setup_"+id); if(!el) return; const value=weights[id]??genericProfileDefaults[id]??"";
       if(id==="legpress"){ el.innerHTML=""; LEG_PRESS_STACK.forEach(v=>{ const opt=document.createElement("option"); opt.value=String(v); opt.textContent=String(v); if(v===nearestLegPressWeight(value)) opt.selected=true; el.appendChild(opt); }); } else el.value=value;
@@ -1160,7 +1303,7 @@
   }
 
   function saveSetup(){
-    const ids = ["legpress","bench","pulldown","row","legcurl","lateral"];
+    const ids = ["legpress","bench","pulldown","row","legcurl","lateral","abmachine"];
     const values = {};
     for(const id of ids){
       const input = document.getElementById("setup_"+id);
@@ -1206,7 +1349,7 @@
     progressStats.innerHTML="";
     [
       ["Einheiten",sessions.length],
-      ["Steigerungen",increases],
+      ["Gewichtssteigerungen",increases],
       ["Letztes Training",formatDate(last.actualDate||last.date).replace(/^[^,]+,\s*/,"")]
     ].forEach(([label,val])=>{
       const d=document.createElement("div"); d.className="stat";
@@ -1215,13 +1358,86 @@
       d.append(s,st); progressStats.appendChild(d);
     });
 
+    const latestIncreases=[];
+    last.exercises.forEach(ex=>{
+      if(ex.progression && ex.progression.mode==="up"){
+        const work=ex.sets.filter(s=>s.type==="work" && !s.extra);
+        const oldWeight=work.length ? Number(work[0].weight) : null;
+        if(oldWeight!==null && Number.isFinite(oldWeight)){
+          let newWeight=oldWeight + 5;
+          if(ex.id==="legpress"){
+            const idx=LEG_PRESS_STACK.indexOf(nearestLegPressWeight(oldWeight));
+            newWeight=LEG_PRESS_STACK[Math.min(LEG_PRESS_STACK.length-1,idx+1)];
+          }else{
+            const planEx=state.plan.find(p=>p.id===ex.id);
+            const inc=planEx ? Number(planEx.increment||0) : 0;
+            newWeight=oldWeight+inc;
+          }
+          latestIncreases.push(`${ex.name.replace(/^\d+\.\s*/,"")}: ${oldWeight} → ${newWeight} ${ex.unit==="kg/Hand"?"kg/Hand":"kg"}`);
+        }
+      }
+    });
+
+    if(latestIncreases.length){
+      const detail=document.createElement("div");
+      detail.className="history-card";
+      const title=document.createElement("div");
+      title.className="history-date";
+      title.textContent="Letzte Gewichtssteigerungen";
+      detail.appendChild(title);
+      latestIncreases.forEach(txt=>{
+        const row=document.createElement("div");
+        row.className="history-ex";
+        const left=document.createElement("strong");
+        left.textContent=txt.split(":")[0];
+        const right=document.createElement("span");
+        right.textContent=txt.split(":").slice(1).join(":").trim();
+        row.append(left,right);
+        detail.appendChild(row);
+      });
+      historyList.appendChild(detail);
+    }
+
+    const trendItems=[];
+    state.plan.forEach(ex=>{
+      const trend=exerciseTrend(ex);
+      if(trend){
+        trendItems.push({
+          name:ex.name.replace(/^\d+\.\s*/,""),
+          title:trend.title,
+          mode:trend.mode
+        });
+      }
+    });
+
+    if(trendItems.length){
+      const insight=document.createElement("div");
+      insight.className="history-card";
+      const title=document.createElement("div");
+      title.className="history-date";
+      title.textContent="Trainingshinweise";
+      insight.appendChild(title);
+
+      trendItems.forEach(item=>{
+        const row=document.createElement("div");
+        row.className="history-ex";
+        const left=document.createElement("strong");
+        left.textContent=item.name;
+        const right=document.createElement("span");
+        right.textContent=item.title;
+        row.append(left,right);
+        insight.appendChild(row);
+      });
+      historyList.appendChild(insight);
+    }
+
     sessions.forEach(session=>{
       const card=document.createElement("article");
       card.className="history-card";
       const top=document.createElement("div"); top.className="history-top";
       const left=document.createElement("div");
       const d=document.createElement("div"); d.className="history-date"; d.textContent=formatDate(session.date);
-      const m=document.createElement("div"); m.className="history-meta"; m.textContent="Freitag · Ganzkörpertraining · v.2.1";
+      const m=document.createElement("div"); m.className="history-meta"; m.textContent="Freitag · Ganzkörpertraining · v.2.1.2.2";
       left.append(d,m);
       const del=document.createElement("button"); del.type="button"; del.className="btn danger"; del.style.minHeight="38px"; del.style.padding="6px 10px"; del.style.fontSize="13px"; del.textContent="Löschen";
       del.addEventListener("click",()=>{

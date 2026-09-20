@@ -102,3 +102,24 @@ Seitheben und schräge Sit-ups können als Supersatz ausgeführt werden.
 - Pro Freitagsslot zählt höchstens eine Einheit.
 - Verlauf speichert tatsächliches Trainingsdatum und den zugehörigen Freitag.
 - Profil zeigt passende Hinweise für Vorziehen, regulären Freitag und Nachholen.
+
+
+## Version 2.1.1 (20.09.2026 10:02)
+
+- Schräge Sit-ups durch Bauchmaschine ersetzt.
+- Bauchmaschine: 30 kg Start-Arbeitsgewicht, 2 Arbeitssätze, 10–15 Wiederholungen.
+- Progression Bauchmaschine: +5 kg.
+- Verlauf: „Gewichtssteigerungen“ statt „Steigerungen“.
+- Zusätzlich werden die letzten konkreten Steigerungen mit Übung und altem/neuem Gewicht angezeigt.
+
+
+## Version 2.1.2 (20.09.2026 22:10)
+
+Plateau-/Trend-Check je Übung:
+
+- 1–2 Einheiten ohne neues Gewicht: kein Plateau-Hinweis.
+- Ab 3 Einheiten mit gleichem Gewicht und steigenden Wiederholungen: „Fortschritt bei gleichem Gewicht“.
+- Ab 3 Einheiten mit praktisch unveränderten Wiederholungen: Hinweis auf fehlende klare Progression.
+- Ab 5 Einheiten ohne nennenswerten Fortschritt: „Plateau prüfen“.
+- Wenn in zwei Einheiten hintereinander der untere Wiederholungsbereich unterschritten wird: „Arbeitsgewicht/Erholung prüfen“.
+- Zusatzsätze werden für die Trendanalyse nicht herangezogen.
