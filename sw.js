@@ -1,11 +1,11 @@
-const CACHE_NAME = "no-pain-no-gain-v213-20260922";
+const CACHE_NAME = "no-pain-no-gain-v213-iconfix";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./manifest.webmanifest",
-  "./icons/icon-180.png",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png"
+  "./manifest-v2131.webmanifest",
+  "./icons/npng-icon-180-v2131.png",
+  "./icons/npng-icon-192-v2131.png",
+  "./icons/npng-icon-512-v2131.png"
 ];
 
 self.addEventListener("install", event => {

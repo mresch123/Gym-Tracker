@@ -131,3 +131,7 @@ Plateau-/Trend-Check je Übung:
 - Sichtbarer Titel im Header: **NO PAIN / NO GAIN** auf zwei Zeilen.
 - Neues dunkles Fitness-App-Icon integriert (180, 192 und 512 px).
 - Manifest-Name und Apple-Web-App-Titel aktualisiert.
+
+
+## Icon Cache Fix
+Neue Icon-Dateinamen und neues Manifest erzwingen ein frisches Laden durch Chrome.
