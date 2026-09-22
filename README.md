@@ -143,3 +143,9 @@ Neue Icon-Dateinamen und neues Manifest erzwingen ein frisches Laden durch Chrom
 - HTML lädt das Manifest mit Versionsparameter `?v=2132`, um Chrome-Cache zu umgehen.
 - Neue NO-PAIN-NO-GAIN-Icons behalten eindeutige Dateinamen.
 - Service-Worker-Cache auf neue Version gesetzt.
+
+
+## Homescreen-Name (22.09.2026 12:26)
+
+- Voller App-Name bleibt **NO PAIN NO GAIN**.
+- Text unter dem Homescreen-Icon ist jetzt **Freitag Gym**.

@@ -1,6 +1,6 @@
 {
   "name": "NO PAIN NO GAIN",
-  "short_name": "NO PAIN",
+  "short_name": "Freitag Gym",
   "description": "Persönlicher Gym-Tracker mit Progression, Verlauf, Streaks und Trainingshinweisen.",
   "start_url": "./index.html",
   "scope": "./",

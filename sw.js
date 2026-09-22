@@ -1,4 +1,4 @@
-const CACHE_NAME = "no-pain-no-gain-v213-installfix2";
+const CACHE_NAME = "no-pain-no-gain-freitag-gym-label-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
