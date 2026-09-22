@@ -135,3 +135,11 @@ Plateau-/Trend-Check je Übung:
 
 ## Icon Cache Fix
 Neue Icon-Dateinamen und neues Manifest erzwingen ein frisches Laden durch Chrome.
+
+
+## Install-Fix
+
+- Manifest wieder unter Standardpfad `manifest.webmanifest`.
+- HTML lädt das Manifest mit Versionsparameter `?v=2132`, um Chrome-Cache zu umgehen.
+- Neue NO-PAIN-NO-GAIN-Icons behalten eindeutige Dateinamen.
+- Service-Worker-Cache auf neue Version gesetzt.

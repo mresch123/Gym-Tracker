@@ -1,8 +1,8 @@
-const CACHE_NAME = "no-pain-no-gain-v213-iconfix";
+const CACHE_NAME = "no-pain-no-gain-v213-installfix2";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./manifest-v2131.webmanifest",
+  "./manifest.webmanifest",
   "./icons/npng-icon-180-v2131.png",
   "./icons/npng-icon-192-v2131.png",
   "./icons/npng-icon-512-v2131.png"
