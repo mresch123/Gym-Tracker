@@ -123,3 +123,11 @@ Plateau-/Trend-Check je Übung:
 - Ab 5 Einheiten ohne nennenswerten Fortschritt: „Plateau prüfen“.
 - Wenn in zwei Einheiten hintereinander der untere Wiederholungsbereich unterschritten wird: „Arbeitsgewicht/Erholung prüfen“.
 - Zusatzsätze werden für die Trendanalyse nicht herangezogen.
+
+
+## Version 2.1.3 (22.09.2026 08:21)
+
+- App-Name auf **NO PAIN NO GAIN** geändert.
+- Sichtbarer Titel im Header: **NO PAIN / NO GAIN** auf zwei Zeilen.
+- Neues dunkles Fitness-App-Icon integriert (180, 192 und 512 px).
+- Manifest-Name und Apple-Web-App-Titel aktualisiert.

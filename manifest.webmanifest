@@ -1,7 +1,7 @@
 {
-  "name": "Freitag Gym Tracker",
-  "short_name": "Freitag Gym",
-  "description": "Persönlicher Freitag-Gym-Tracker mit Progression, Verlauf und Chat-Export.",
+  "name": "NO PAIN NO GAIN",
+  "short_name": "NO PAIN",
+  "description": "Persönlicher Gym-Tracker mit Progression, Verlauf, Streaks und Trainingshinweisen.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
