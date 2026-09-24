@@ -149,3 +149,15 @@ Neue Icon-Dateinamen und neues Manifest erzwingen ein frisches Laden durch Chrom
 
 - Voller App-Name bleibt **NO PAIN NO GAIN**.
 - Text unter dem Homescreen-Icon ist jetzt **Freitag Gym**.
+
+
+## Version 2.2 Push (24.09.2026 07:59)
+
+- OneSignal Web SDK integriert.
+- OneSignal App ID: `27e3d356-24f5-48c7-bb0e-211585d3a179`.
+- Separater OneSignal-Service-Worker unter `onesignal/OneSignalSDKWorker.js`.
+- Push-Berechtigung wird ausschließlich durch Klick auf „Push-Benachrichtigungen aktivieren“ angefordert.
+- Nach Aktivierung wird `gym_reminders_enabled=1` als OneSignal-Tag gesetzt.
+- Bei abgeschlossenem Training wird `last_completed_slot=YYYY-MM-DD` an OneSignal übertragen.
+- Trainingsdetails, Gewichte und Wiederholungen bleiben lokal und werden nicht an OneSignal übertragen.
+- Der serverseitige Versandplan (Freitag/Samstag/Sonntag) wird im nächsten Schritt per GitHub Actions eingerichtet; dafür wird der OneSignal API Key ausschließlich als GitHub Secret gespeichert.
