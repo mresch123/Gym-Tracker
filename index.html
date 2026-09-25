@@ -14,7 +14,7 @@
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 
 <title>NO PAIN NO GAIN</title>
-<meta name="app-build" content="NO-PAIN-v2.2-PUSH · 24.09.2026 07:59">
+<meta name="app-build" content="NO-PAIN-v2.2.1-PUSHFIX · 24.09.2026 17:44">
 <style>
   :root{
     --bg:#f7f7f5;
@@ -459,7 +459,7 @@
 <main class="app">
   <div class="top">
     <div>
-      <div class="eyebrow">Freitag · Ganzkörpertraining · v.2.2</div>
+      <div class="eyebrow">Freitag · Ganzkörpertraining · v.2.2.1</div>
       <h1>NO PAIN<br>NO GAIN</h1>
     </div>
     <div class="datebox">
@@ -958,7 +958,7 @@
   }
 
   const ONESIGNAL_APP_ID = "27e3d356-24f5-48c7-bb0e-211585d3a179";
-  const ONESIGNAL_SW_PATH = "onesignal/OneSignalSDKWorker.js";
+  const ONESIGNAL_SW_PATH = "/Gym-Tracker/onesignal/OneSignalSDKWorker.js";
   const ONESIGNAL_SW_SCOPE = "/Gym-Tracker/onesignal/";
   let oneSignalInstance = null;
 
@@ -1039,6 +1039,9 @@
       updatePushUI(oneSignalInstance);
     }catch(e){
       updatePushUI(oneSignalInstance);
+      const msg=(e && e.message) ? e.message : String(e || "Unbekannter Fehler");
+      if(pushStatus) pushStatus.textContent="Push-Fehler: "+msg;
+      console.error("OneSignal push error:", e);
       showToast("Push konnte nicht aktiviert werden");
     }
   }
@@ -1050,6 +1053,7 @@
         appId: ONESIGNAL_APP_ID,
         serviceWorkerPath: ONESIGNAL_SW_PATH,
         serviceWorkerParam: { scope: ONESIGNAL_SW_SCOPE },
+        serviceWorkerOverrideForTypical: true,
         welcomeNotification: { disable: true }
       });
       oneSignalInstance=OneSignal;
@@ -1063,7 +1067,9 @@
         updatePushUI(OneSignal);
       });
     }catch(e){
-      if(pushStatus) pushStatus.textContent="OneSignal konnte nicht initialisiert werden. Prüfe Website-URL und Service Worker.";
+      const msg=(e && e.message) ? e.message : String(e || "Unbekannter Fehler");
+      console.error("OneSignal init error:", e);
+      if(pushStatus) pushStatus.textContent="OneSignal-Fehler: "+msg;
     }
   });
 
@@ -1562,7 +1568,7 @@
       const top=document.createElement("div"); top.className="history-top";
       const left=document.createElement("div");
       const d=document.createElement("div"); d.className="history-date"; d.textContent=formatDate(session.date);
-      const m=document.createElement("div"); m.className="history-meta"; m.textContent="Freitag · Ganzkörpertraining · v.2.2";
+      const m=document.createElement("div"); m.className="history-meta"; m.textContent="Freitag · Ganzkörpertraining · v.2.2.1";
       left.append(d,m);
       const del=document.createElement("button"); del.type="button"; del.className="btn danger"; del.style.minHeight="38px"; del.style.padding="6px 10px"; del.style.fontSize="13px"; del.textContent="Löschen";
       del.addEventListener("click",()=>{

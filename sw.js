@@ -1,4 +1,4 @@
-const CACHE_NAME = "no-pain-no-gain-v22-push-20260924";
+const CACHE_NAME = "no-pain-no-gain-v221-pushfix-20260924";
 const APP_SHELL = [
   "./",
   "./index.html",

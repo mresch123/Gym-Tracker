@@ -161,3 +161,10 @@ Neue Icon-Dateinamen und neues Manifest erzwingen ein frisches Laden durch Chrom
 - Bei abgeschlossenem Training wird `last_completed_slot=YYYY-MM-DD` an OneSignal übertragen.
 - Trainingsdetails, Gewichte und Wiederholungen bleiben lokal und werden nicht an OneSignal übertragen.
 - Der serverseitige Versandplan (Freitag/Samstag/Sonntag) wird im nächsten Schritt per GitHub Actions eingerichtet; dafür wird der OneSignal API Key ausschließlich als GitHub Secret gespeichert.
+
+
+## Push Fix v2.2.1 (24.09.2026 17:44)
+
+- OneSignal Service Worker absolut auf `/Gym-Tracker/onesignal/OneSignalSDKWorker.js` gesetzt.
+- `serviceWorkerOverrideForTypical: true` ergänzt.
+- Konkrete OneSignal-Fehler werden nun direkt in der App angezeigt.
