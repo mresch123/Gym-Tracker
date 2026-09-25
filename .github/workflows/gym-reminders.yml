@@ -1,1 +1,113 @@
+name: Gym Push Reminders
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 14 * * 5"
+      timezone: "Europe/Vienna"
+    - cron: "15 10 * * 6"
+      timezone: "Europe/Vienna"
+    - cron: "15 18 * * 0"
+      timezone: "Europe/Vienna"
+
+permissions:
+  contents: read
+
+jobs:
+  send-reminder:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send OneSignal reminder
+        env:
+          ONESIGNAL_API_KEY: ${{ secrets.ONESIGNAL_API_KEY }}
+          ONESIGNAL_APP_ID: "27e3d356-24f5-48c7-bb0e-211585d3a179"
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import sys
+          import urllib.request
+          import urllib.error
+          from datetime import datetime, timedelta
+          from zoneinfo import ZoneInfo
+
+          app_id = os.environ["ONESIGNAL_APP_ID"]
+          api_key = os.environ["ONESIGNAL_API_KEY"]
+          event_name = os.environ.get("EVENT_NAME", "")
+          now = datetime.now(ZoneInfo("Europe/Vienna"))
+          weekday = now.weekday()  # Mo=0 ... Fr=4, Sa=5, So=6
+
+          # Manual test: send to all devices that enabled gym reminders.
+          if event_name == "workflow_dispatch":
+              heading = "🏋️ NO PAIN NO GAIN"
+              content = "Test erfolgreich: Deine Freitag-Gym-Push-Benachrichtigungen funktionieren."
+              filters = [
+                  {"field": "tag", "key": "gym_reminders_enabled", "relation": "=", "value": "1"}
+              ]
+              notification_name = "Gym reminder manual test"
+          else:
+              if weekday not in (4, 5, 6):
+                  print("Scheduled run outside Friday-Sunday; nothing to send.")
+                  sys.exit(0)
+
+              # Fri/Sat/Sun all belong to the same Friday slot.
+              friday = (now.date() - timedelta(days=weekday - 4)).isoformat()
+
+              if weekday == 4:
+                  heading = "🔥 Heute ist Trainingstag"
+                  content = "NO PAIN NO GAIN – Zeit für dein Freitagstraining. Halte deine Serie am Laufen."
+                  notification_name = f"Friday gym reminder {friday}"
+              elif weekday == 5:
+                  heading = "⏳ Nachholfenster aktiv"
+                  content = "Freitag verpasst? Du kannst dein Training noch bis Sonntag nachholen und deine Serie erhalten."
+                  notification_name = f"Saturday catch-up reminder {friday}"
+              else:
+                  heading = "⚠️ Serie retten"
+                  content = "Heute ist die letzte Chance: Training bis Sonntag 24:00 nachholen und die Serie sichern."
+                  notification_name = f"Sunday final reminder {friday}"
+
+              # Send only to users who enabled reminders AND have not completed this Friday slot.
+              # The duplicated enabled-filter expresses:
+              # enabled AND (last_completed_slot != friday OR last_completed_slot does not exist)
+              filters = [
+                  {"field": "tag", "key": "gym_reminders_enabled", "relation": "=", "value": "1"},
+                  {"operator": "AND"},
+                  {"field": "tag", "key": "last_completed_slot", "relation": "!=", "value": friday},
+                  {"operator": "OR"},
+                  {"field": "tag", "key": "gym_reminders_enabled", "relation": "=", "value": "1"},
+                  {"operator": "AND"},
+                  {"field": "tag", "key": "last_completed_slot", "relation": "not_exists"}
+              ]
+
+          payload = {
+              "app_id": app_id,
+              "target_channel": "push",
+              "name": notification_name,
+              "headings": {"en": heading, "de": heading},
+              "contents": {"en": content, "de": content},
+              "url": "https://mresch123.github.io/Gym-Tracker/",
+              "filters": filters
+          }
+
+          req = urllib.request.Request(
+              "https://api.onesignal.com/notifications",
+              data=json.dumps(payload).encode("utf-8"),
+              headers={
+                  "Authorization": f"Key {api_key}",
+                  "Content-Type": "application/json; charset=utf-8"
+              },
+              method="POST"
+          )
+
+          try:
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  body = response.read().decode("utf-8")
+                  print("OneSignal response:", body)
+          except urllib.error.HTTPError as exc:
+              error_body = exc.read().decode("utf-8", errors="replace")
+              print(f"OneSignal HTTP error {exc.code}: {error_body}")
+              sys.exit(1)
+          PY
 
