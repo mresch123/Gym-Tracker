@@ -14,7 +14,7 @@
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 
 <title>NO PAIN NO GAIN</title>
-<meta name="app-build" content="NO-PAIN-v2.2.1-PUSHFIX · 24.09.2026 17:44">
+<meta name="app-build" content="NO-PAIN-v2.2.2-DATEFIX · 25.09.2026 14:22">
 <style>
   :root{
     --bg:#f7f7f5;
@@ -459,7 +459,7 @@
 <main class="app">
   <div class="top">
     <div>
-      <div class="eyebrow">Freitag · Ganzkörpertraining · v.2.2.1</div>
+      <div class="eyebrow">Freitag · Ganzkörpertraining · v.2.2.2</div>
       <h1>NO PAIN<br>NO GAIN</h1>
     </div>
     <div class="datebox">
@@ -734,6 +734,16 @@
     return dateToISO(d);
   }
 
+  function resolvedNextTrainingDate(history){
+    const target = targetFridayForToday();
+    const completed = (history || []).some(session=>{
+      const actual = session.actualDate || session.date;
+      const slot = session.slotFriday || fridaySlotForDateISO(actual) || session.date;
+      return slot === target;
+    });
+    return completed ? nextFridayAfter(target) : target;
+  }
+
   function isTrainingWindowToday(){
     return fridaySlotForDateISO(todayISO()) !== null;
   }
@@ -814,7 +824,7 @@
       profileName: "",
       profileConfigured: false,
       sessionSets: {},
-      appVersion: 21
+      appVersion: 222
     };
   }
   function loadState(){
@@ -838,9 +848,10 @@
         s.appVersion=2;
       }
       if(s.appVersion < 21){
-        s.currentDate = targetFridayForToday();
         s.appVersion = 21;
       }
+      s.currentDate = resolvedNextTrainingDate(s.history);
+      s.appVersion = 222;
       return s;
     }catch(e){
       return initialState();
@@ -1075,6 +1086,7 @@
 
     function renderWorkout(){
     renderRewardCard();
+    state.currentDate = resolvedNextTrainingDate(state.history);
     nextFridayText.textContent=formatDate(state.currentDate);
     const datebox=nextFridayText.parentElement; const oldChip=datebox.querySelector(".profile-chip"); if(oldChip) oldChip.remove();
     cards.innerHTML="";
@@ -1322,7 +1334,7 @@
     state.draft={};
     state.notes={};
     state.sessionSets={};
-    state.appVersion=21;
+    state.appVersion=222;
     saveState();
     syncOneSignalTags(slotFriday);
     closeFinish();
@@ -1453,7 +1465,7 @@
     state.profileConfigured = true;
     state.draft = {};
     state.sessionSets = {};
-    state.appVersion = 21;
+    state.appVersion = 222;
     saveState();
     setupDialog.classList.add("hidden");
     renderWorkout();
@@ -1568,7 +1580,7 @@
       const top=document.createElement("div"); top.className="history-top";
       const left=document.createElement("div");
       const d=document.createElement("div"); d.className="history-date"; d.textContent=formatDate(session.date);
-      const m=document.createElement("div"); m.className="history-meta"; m.textContent="Freitag · Ganzkörpertraining · v.2.2.1";
+      const m=document.createElement("div"); m.className="history-meta"; m.textContent="Freitag · Ganzkörpertraining · v.2.2.2";
       left.append(d,m);
       const del=document.createElement("button"); del.type="button"; del.className="btn danger"; del.style.minHeight="38px"; del.style.padding="6px 10px"; del.style.fontSize="13px"; del.textContent="Löschen";
       del.addEventListener("click",()=>{
@@ -1645,7 +1657,7 @@
   function summarizeBackup(payload){
     const s = payload.appState;
     const units = Array.isArray(s.history) ? s.history.length : 0;
-    const nextDate = s.currentDate ? formatDate(s.currentDate) : "unbekannt";
+    const nextDate = Array.isArray(s.history) ? formatDate(resolvedNextTrainingDate(s.history)) : (s.currentDate ? formatDate(s.currentDate) : "unbekannt");
     const exported = payload.exportedAt
       ? new Intl.DateTimeFormat("de-AT",{dateStyle:"medium",timeStyle:"short"}).format(new Date(payload.exportedAt))
       : "unbekannt";
@@ -1678,7 +1690,8 @@
       state.notes = {};
       state.plan = normalizePlanToFinalFriday(state.plan);
       state.sessionSets = {};
-      state.appVersion = 21;
+      state.currentDate = resolvedNextTrainingDate(state.history);
+      state.appVersion = 222;
       saveState();
       renderWorkout();
       renderHistory();

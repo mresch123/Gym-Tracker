@@ -168,3 +168,12 @@ Neue Icon-Dateinamen und neues Manifest erzwingen ein frisches Laden durch Chrom
 - OneSignal Service Worker absolut auf `/Gym-Tracker/onesignal/OneSignalSDKWorker.js` gesetzt.
 - `serviceWorkerOverrideForTypical: true` ergänzt.
 - Konkrete OneSignal-Fehler werden nun direkt in der App angezeigt.
+
+
+## Version 2.2.2 (25.09.2026 14:22)
+
+- Fehler bei „Nächster Termin“ behoben.
+- Termin wird automatisch aus aktuellem Datum und Trainingshistorie berechnet.
+- Aktueller Freitag offen → aktueller Freitag wird angezeigt.
+- Aktueller Freitag abgeschlossen → automatisch nächster Freitag.
+- Alte gespeicherte Terminwerte und importierte Backups werden automatisch korrigiert.
