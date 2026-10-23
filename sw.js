@@ -1,4 +1,4 @@
-const CACHE_NAME = "no-pain-no-gain-v233-manual-weight";
+const CACHE_NAME = "no-pain-no-gain-v234-warmup-lateral";
 const APP_SHELL = [
   "./",
   "./index.html",

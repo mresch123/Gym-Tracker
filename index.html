@@ -14,7 +14,7 @@
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
 
 <title>NO PAIN NO GAIN</title>
-<meta name="app-build" content="NO-PAIN-v2.3.3-MANUAL-WEIGHT · 23.10.2026 20:06">
+<meta name="app-build" content="NO-PAIN-v2.3.4-WARMUP-LATERAL · 23.10.2026 20:16">
 <style>
   :root{
     --bg:#f7f7f5;
@@ -459,7 +459,7 @@
 <main class="app">
   <div class="top">
     <div>
-      <div class="eyebrow">Freitag · Ganzkörpertraining · v.2.3.3</div>
+      <div class="eyebrow">Freitag · Ganzkörpertraining · v.2.3.4</div>
       <h1>NO PAIN<br>NO GAIN</h1>
     </div>
     <div class="datebox">
@@ -824,7 +824,7 @@
       profileName: "",
       profileConfigured: false,
       sessionSets: {},
-      appVersion: 233
+      appVersion: 234
     };
   }
   function loadState(){
@@ -874,6 +874,34 @@
       }
       if(s.appVersion < 233){
         s.appVersion = 233;
+      }
+
+      if(s.appVersion < 234){
+        // Bereits vorbereitete Seitheben-Sätze aus älteren Versionen
+        // behalten sonst den alten Zielbereich 12–20.
+        if(Array.isArray(s.sessionSets && s.sessionSets.lateral)){
+          s.sessionSets.lateral.forEach(set=>{
+            if(set && set.type==="work"){
+              set.target="Ziel 12–15 Wdh.";
+              set.min=12;
+              set.max=15;
+            }
+          });
+        }
+
+        // Auch der aktuelle Plan wird sicherheitshalber auf 12–15 normiert.
+        const lateral=s.plan.find(x=>x.id==="lateral");
+        if(lateral && Array.isArray(lateral.sets)){
+          lateral.sets.forEach(set=>{
+            if(set && set.type==="work"){
+              set.target="Ziel 12–15 Wdh.";
+              set.min=12;
+              set.max=15;
+            }
+          });
+        }
+
+        s.appVersion = 234;
       }
       return s;
     }catch(e){
@@ -1342,13 +1370,22 @@
     state.plan.forEach(ex=>{
       if(ex.increment<=0) return;
 
+      const sessionData=getWorkData(ex);
+
+      // Tatsächlich verwendete reguläre Warm-up-/Ramp-up-Gewichte merken.
+      // Diese sollen – genauso wie manuell gewählte Arbeitsgewichte –
+      // in der nächsten Einheit wieder vorgeschlagen werden.
+      const usedWarmups=sessionData
+        .filter(s=>s.type==="warmup"&&!s.extra)
+        .map(s=>Number(s.weight))
+        .filter(Number.isFinite);
+
       const prog=progressionFor(ex);
-      let regularWork=getWorkData(ex).filter(s=>s.type==="work"&&!s.extra);
-      if(!regularWork.length) regularWork=getWorkData(ex).filter(s=>s.type==="work");
+      let regularWork=sessionData.filter(s=>s.type==="work"&&!s.extra);
+      if(!regularWork.length) regularWork=sessionData.filter(s=>s.type==="work");
       if(!regularWork.length) return;
 
       // Arbeitssatz 1 ist die Referenz für das nächste Basisgewicht.
-      // Damit bleiben manuell gewählte Gewichte nach dem Speichern erhalten.
       let usedWeight=Number(regularWork[0].weight);
       if(!Number.isFinite(usedWeight)) return;
 
@@ -1365,14 +1402,27 @@
         nextWeight=usedWeight+ex.increment;
       }
 
+      // Aktualisiert das Arbeitsgewicht. applyWarmupRules() darf dabei zunächst
+      // automatische Warm-ups berechnen; direkt danach schreiben wir aber die
+      // tatsächlich manuell verwendeten Ramp-up-Werte wieder zurück.
       setExerciseWorkWeight(ex,nextWeight);
+
+      if(usedWarmups.length){
+        const planWarmups=ex.sets.filter(s=>s.type==="warmup");
+        usedWarmups.forEach((weight,idx)=>{
+          if(!planWarmups[idx]) return;
+          planWarmups[idx].weight = ex.id==="legpress"
+            ? nearestLegPressWeight(weight)
+            : Number(weight);
+        });
+      }
     });
 
     state.currentDate=nextFridayAfter(slotFriday);
     state.draft={};
     state.notes={};
     state.sessionSets={};
-    state.appVersion=233;
+    state.appVersion=234;
     saveState();
     syncOneSignalTags(slotFriday);
     closeFinish();
@@ -1503,7 +1553,7 @@
     state.profileConfigured = true;
     state.draft = {};
     state.sessionSets = {};
-    state.appVersion = 233;
+    state.appVersion = 234;
     saveState();
     setupDialog.classList.add("hidden");
     renderWorkout();
@@ -1618,7 +1668,7 @@
       const top=document.createElement("div"); top.className="history-top";
       const left=document.createElement("div");
       const d=document.createElement("div"); d.className="history-date"; d.textContent=formatDate(session.date);
-      const m=document.createElement("div"); m.className="history-meta"; m.textContent="Freitag · Ganzkörpertraining · v.2.3.3";
+      const m=document.createElement("div"); m.className="history-meta"; m.textContent="Freitag · Ganzkörpertraining · v.2.3.4";
       left.append(d,m);
       const del=document.createElement("button"); del.type="button"; del.className="btn danger"; del.style.minHeight="38px"; del.style.padding="6px 10px"; del.style.fontSize="13px"; del.textContent="Löschen";
       del.addEventListener("click",()=>{
@@ -1729,7 +1779,7 @@
       state.plan = normalizePlanToFinalFriday(state.plan);
       state.sessionSets = {};
       state.currentDate = resolvedNextTrainingDate(state.history);
-      state.appVersion = 233;
+      state.appVersion = 234;
       saveState();
       renderWorkout();
       renderHistory();
