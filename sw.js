@@ -1,4 +1,4 @@
-const CACHE_NAME = "no-pain-no-gain-v222-datefix";
+const CACHE_NAME = "no-pain-no-gain-v231-lateral";
 const APP_SHELL = [
   "./",
   "./index.html",
