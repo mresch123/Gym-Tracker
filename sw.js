@@ -1,4 +1,4 @@
-const CACHE_NAME = "no-pain-no-gain-v231-lateral";
+const CACHE_NAME = "no-pain-no-gain-v232-bench-migration";
 const APP_SHELL = [
   "./",
   "./index.html",
